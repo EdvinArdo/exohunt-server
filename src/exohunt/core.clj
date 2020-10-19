@@ -23,10 +23,15 @@
   "Initializes a new map"
   [width height]
   (as-> (vec (repeat height (vec (repeat width {})))) $
-        (map (fn [row]
-               (vec (map (fn [tile] (init-tile (rand-nth ["grass-tile" "water-tile" "stone-tile"])))
-                         row)))
-             $)
+        (map-indexed (fn [y row]
+                       (vec (map-indexed (fn [x tile] (init-tile (if (or (<= y 10)
+                                                                         (>= y 40)
+                                                                         (<= x 10)
+                                                                         (>= x 40))
+                                                                   "water-tile"
+                                                                   (rand-nth ["grass-tile" "water-tile" "stone-tile"]))))
+                                         row)))
+                     $)
         (vec $)
         (assoc-in $ [25 25] (init-tile "grass-tile"))
         (assoc-in $ [24 25] (init-tile "grass-tile"))

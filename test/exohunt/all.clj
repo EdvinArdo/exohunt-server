@@ -3,7 +3,8 @@
             [ysera.test :refer [deftest is]]
             [exohunt.core]
             [exohunt.definitions]
-            [exohunt.definitions-loader]))
+            [exohunt.definitions-loader]
+            [exohunt.websocket]))
 
 (deftest test-all
          "Bootstrapping with the required namespaces, finds all the exohunt.* namespaces (except this one),

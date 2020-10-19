@@ -67,3 +67,8 @@
       :y (+ (:y coords) y-change)}))
   ([state char-id direction]
    (get-new-coords (get-coords state char-id) direction)))
+
+(defn can-move?
+  "Returns true if the character with the given id can move in the given direction."
+  [state char-id direction]
+  (is-empty? state (get-new-coords state char-id direction)))
