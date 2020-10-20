@@ -34,7 +34,8 @@
   (let [char-id (get-available-char-id @game-atom)
         client-state-atom (atom nil)]
     ; Add watcher that sends client state on change
-    (do (add-watch client-state-atom :watcher (fn [key ref old new] (send! channel (json/write-str new))))
+    (do (add-watch client-state-atom :watcher (fn [key ref old new] (when (not= old new)
+                                                                      (send! channel (json/write-str new)))))
         (reset! client-state-atom (get-client-state @game-atom char-id))
         (swap! connections assoc channel char-id)
         (swap! clients-atom assoc char-id {:channel       channel

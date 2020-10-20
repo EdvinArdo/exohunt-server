@@ -6,6 +6,13 @@
 (def client-width 17)
 (def client-height 13)
 
+(defn get-client-character
+  "Returns the client character."
+  [state char-id]
+  (let [char (get-char state char-id)]
+    {:name   (:name char)
+     :coords (:coords char)}))
+
 (defn get-client-state
   "Returns the client state for the character with the given id."
   [state char-id]
@@ -16,4 +23,4 @@
         bottom (+ y (/ (+ client-height 1) 2))]
     {:map       (->> (subvec (:map state) top bottom)
                      (map (fn [row] (subvec row left right))))
-     :character (get-char state char-id)}))
+     :character (get-client-character state char-id)}))
