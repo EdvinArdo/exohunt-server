@@ -5,7 +5,8 @@
                                      get-entity
                                      is-empty?
                                      get-new-coords
-                                     get-coords]]
+                                     get-coords
+                                     get-move-cooldown]]
             [exohunt.definitions :refer [get-definition]]
             [ysera.test :refer [is=]]))
 
@@ -42,9 +43,10 @@
 (defn init-char
   "Initializes a new character"
   [counter name coords]
-  {:name   name
-   :id     counter
-   :coords coords})
+  {:name      name
+   :id        counter
+   :coords    coords
+   :cooldowns {:move 0}})
 
 (defn init-game
   "Initializes a new game"
@@ -171,14 +173,33 @@
              (is= (get-entity state {:x 25 :y 25})
                   nil)))}
   [state char-id direction]
-  {:pre [(is-empty? state (get-new-coords state char-id direction))]}
+  {:pre [(is-empty? state (get-new-coords state char-id direction))
+         (<= (get-move-cooldown state char-id) 0)]}
   (let [old-coords (get-coords state char-id)
         new-coords (get-new-coords state char-id direction)]
     (-> (assoc-char state char-id :coords new-coords)
+        (update-char char-id (fn [char] (assoc-in char [:cooldowns :move] 20)))
         (dissoc-entity old-coords)
         (assoc-entity new-coords char-id))))
 
-
+(defn decrement-cooldowns
+  "Decrements the cooldowns of all characters."
+  {:test (fn []
+           (is= (-> (init-game)
+                    (create-char "char" {:x 25 :y 25})
+                    (move-char 0 :down)
+                    (decrement-cooldowns)
+                    (get-move-cooldown 0))
+                19))}
+  [state]
+  (update state :characters (fn [characters]
+                              (reduce-kv (fn [acc key val]
+                                           (assoc acc key (update-in val [:cooldowns :move] (fn [old-cd]
+                                                                                              (if (> old-cd 0)
+                                                                                                (- old-cd 1)
+                                                                                                0)))))
+                                         {}
+                                         characters))))
 
 
 

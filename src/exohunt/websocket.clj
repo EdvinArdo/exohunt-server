@@ -2,7 +2,8 @@
   (:require [exohunt.core :refer [init-game
                                   create-char
                                   spawn-char
-                                  move-char]]
+                                  move-char
+                                  decrement-cooldowns]]
             [exohunt.client :refer [get-client-state]]
             [exohunt.api :refer [handle-message-queues]]
             [clj-json-patch.core :refer [diff]]
@@ -73,8 +74,11 @@
 
 (defn game-loop!
   []
-  ; Handle message-queues
   (do
+    ; Update cooldowns
+    (swap! game-atom decrement-cooldowns)
+
+    ; Handle message-queues
     (let [message-queues (reduce-kv (fn [acc char-id client] (assoc acc char-id (:message-queue client)))
                                     {}
                                     @clients-atom)]
