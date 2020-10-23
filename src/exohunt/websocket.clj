@@ -13,16 +13,19 @@
   (:use org.httpkit.server))
 
 (defonce game-atom (atom (-> (init-game)
-                             (create-char "Test Char" {:x 25 :y 25})
-                             (spawn-char 0))))
+                             (create-char "Test Char" {:x 25 :y 24})
+                             (create-char "Test Char" {:x 25 :y 26})
+                             (spawn-char 0)
+                             (spawn-char 1))))
 (defonce connections (atom {}))
 (defonce clients-atom (atom {}))
 (defonce server (atom nil))
 
 (defn get-available-char-id
-  [state]
+  [state used-char-ids]
   (let [characters (:characters state)
-        first-char-id (first (keys characters))]
+        available-characters (filter (fn [char-id] (not (contains? used-char-ids char-id))) (keys characters))
+        first-char-id (first available-characters)]
     first-char-id))
 
 (defn on-close-handler
@@ -31,12 +34,12 @@
 
 (defn on-open-handler
   [channel]
-  (let [char-id (get-available-char-id @game-atom)
+  (let [char-id (get-available-char-id @game-atom (vec (keys @clients-atom)))
         client-state-atom (atom nil)]
     ; Add watcher that sends client state on change
     (do (add-watch client-state-atom :watcher (fn [key ref old new] (when (not= old new)
                                                                       (send! channel (json/write-str new)))))
-        (reset! client-state-atom (get-client-state @game-atom char-id))
+        (reset! client-state-atom (get-client-state @game-atom char-id '()))
         (swap! connections assoc channel char-id)
         (swap! clients-atom assoc char-id {:channel       channel
                                            :message-queue '()
@@ -83,16 +86,17 @@
     (let [message-queues (reduce-kv (fn [acc char-id client] (assoc acc char-id (:message-queue client)))
                                     {}
                                     @clients-atom)]
-      (swap! game-atom handle-message-queues message-queues))
+      (let [{game-state :state
+             events-map :events-map} (handle-message-queues @game-atom message-queues)]
+        (do (reset! game-atom game-state)
+            ; Clear message queues
+            (swap! clients-atom clear-message-queues)
 
-    ; Clear message queues
-    (swap! clients-atom clear-message-queues)
-
-    ; Update client states
-    (doseq [[char-id {channel       :channel
-                      message-queue :message-queue
-                      state-atom    :state-atom}] @clients-atom]
-      (reset! state-atom (get-client-state @game-atom char-id)))))
+            ; Update client states
+            (doseq [[char-id {channel       :channel
+                              message-queue :message-queue
+                              state-atom    :state-atom}] @clients-atom]
+              (reset! state-atom (get-client-state @game-atom char-id (get events-map char-id)))))))))
 
 ; https://stackoverflow.com/questions/21404130/periodically-calling-a-function-in-clojure
 (def game-loop-time (/ 1000 20))

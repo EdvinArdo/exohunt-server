@@ -1,5 +1,5 @@
 (ns exohunt.core
-  (:require [exohunt.getters :refer [get-counter
+  (:require [exohunt.getters :refer [get-and-increment-counter
                                      get-char
                                      get-tile
                                      get-entity
@@ -63,8 +63,10 @@
                     :name)
                 "char"))}
   [state name coords]
-  (let [char (init-char (get-counter state) name coords)]
-    (assoc-in state [:characters (:id char)] char)))
+  (let [{counter   :counter
+         new-state :state} (get-and-increment-counter state)
+        char (init-char counter name coords)]
+    (assoc-in new-state [:characters (:id char)] char)))
 
 (defn update-tile
   "Update tile at the given coords with the given function."
@@ -178,7 +180,7 @@
   (let [old-coords (get-coords state char-id)
         new-coords (get-new-coords state char-id direction)]
     (-> (assoc-char state char-id :coords new-coords)
-        (update-char char-id (fn [char] (assoc-in char [:cooldowns :move] 20)))
+        (update-char char-id (fn [char] (assoc-in char [:cooldowns :move] 10)))
         (dissoc-entity old-coords)
         (assoc-entity new-coords char-id))))
 
@@ -190,7 +192,7 @@
                     (move-char 0 :down)
                     (decrement-cooldowns)
                     (get-move-cooldown 0))
-                19))}
+                9))}
   [state]
   (update state :characters (fn [characters]
                               (reduce-kv (fn [acc key val]

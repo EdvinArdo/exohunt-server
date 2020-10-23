@@ -9,6 +9,12 @@
   [state]
   (:counter state))
 
+(defn get-and-increment-counter
+  "Returns the counter from state."
+  [state]
+  {:counter (:counter state)
+   :state   (update state :counter inc)})
+
 (defn get-char
   "Returns the character with the given id."
   [state char-id]
