@@ -1,6 +1,7 @@
 (ns exohunt.core
   (:require [exohunt.getters :refer [get-and-increment-counter
                                      get-char
+                                     get-monster
                                      get-tile
                                      get-entity
                                      is-empty?
@@ -11,7 +12,7 @@
             [ysera.test :refer [is=]]))
 
 (defn init-tile
-  "Initializes a new tile"
+  "Initializes a new tile."
   ([tile-id]
    (let [definition (get-definition tile-id)]
      {:walkable (:walkable definition)
@@ -20,8 +21,26 @@
    (-> (init-tile tile)
        (assoc :entity entity))))
 
+(defn init-monster
+  "Initializes a new monster."
+  {:test (fn []
+           (is= (-> (init-monster "rat" 0 {:x 25 :y 25})
+                    :name)
+                "Rat"))}
+  [monster-id id coords]
+  (let [definition (get-definition monster-id)]
+    {:name              (:name definition)
+     :id                id
+     :coords            coords
+     :max-health        (:max-health definition)
+     :health            (:max-health definition)
+     :min-damage        (:min-damage definition)
+     :max-damage        (:max-damage definition)
+     :max-move-cooldown (:move-cooldown definition)
+     :move-cooldown     (:move-cooldown definition)}))
+
 (defn init-map
-  "Initializes a new map"
+  "Initializes a new map."
   [width height]
   (as-> (vec (repeat height (vec (repeat width {})))) $
         (map-indexed (fn [y row]
@@ -41,7 +60,7 @@
         (assoc-in $ [25 26] (init-tile "grass-tile"))))
 
 (defn init-char
-  "Initializes a new character"
+  "Initializes a new character."
   [counter name coords]
   {:name      name
    :id        counter
@@ -49,10 +68,11 @@
    :cooldowns {:move 0}})
 
 (defn init-game
-  "Initializes a new game"
+  "Initializes a new game."
   []
   (-> {:map        (init-map 50 50)
        :characters {}
+       :monsters   {}
        :counter    0}))
 
 (defn create-char
@@ -203,41 +223,17 @@
                                          {}
                                          characters))))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+(defn spawn-monster
+  "Spawns a new monster of the given monster-id at the given coordinates."
+  {:test (fn []
+           (is= (-> (init-game)
+                    (spawn-monster "rat" {:x 25 :y 25})
+                    (get-monster 0)
+                    :name)
+                "Rat"))}
+  [state monster-id coords]
+  {:pre [(is-empty? state coords)]}
+  (let [{new-state :state id :counter} (get-and-increment-counter state)
+        monster (init-monster monster-id id coords)]
+    (-> (assoc-entity new-state coords id)
+        (assoc-in [:monsters id] monster))))

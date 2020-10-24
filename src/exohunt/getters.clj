@@ -20,6 +20,11 @@
   [state char-id]
   (get-in state [:characters char-id]))
 
+(defn get-monster
+  "Returns the character with the given id."
+  [state monster-id]
+  (get-in state [:monsters monster-id]))
+
 (defn get-coords
   "Returns the coords of the character with the given id."
   [state char-id]

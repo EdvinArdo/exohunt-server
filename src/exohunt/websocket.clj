@@ -3,7 +3,8 @@
                                   create-char
                                   spawn-char
                                   move-char
-                                  decrement-cooldowns]]
+                                  decrement-cooldowns
+                                  spawn-monster]]
             [exohunt.client :refer [get-client-state]]
             [exohunt.api :refer [handle-message-queues]]
             [clj-json-patch.core :refer [diff]]
@@ -16,7 +17,8 @@
                              (create-char "Test Char" {:x 25 :y 24})
                              (create-char "Test Char" {:x 25 :y 26})
                              (spawn-char 0)
-                             (spawn-char 1))))
+                             (spawn-char 1)
+                             (spawn-monster "rat" {:x 26 :y 25}))))
 (defonce connections (atom {}))
 (defonce clients-atom (atom {}))
 (defonce server (atom nil))
@@ -30,7 +32,9 @@
 
 (defn on-close-handler
   [channel status]
-  (swap! connections dissoc channel))
+  (let [char-id (@connections channel)]
+    (do (swap! connections dissoc channel)
+        (swap! clients-atom dissoc char-id))))
 
 (defn on-open-handler
   [channel]

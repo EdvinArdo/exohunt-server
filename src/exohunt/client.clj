@@ -1,7 +1,8 @@
 (ns exohunt.client
   (:require
     [exohunt.getters :refer [get-char
-                             get-coords]]))
+                             get-coords
+                             get-monster]]))
 
 (def client-width 17)
 (def client-height 13)
@@ -23,7 +24,11 @@
         top (- y (/ (- client-height 1) 2))
         bottom (+ y (/ (+ client-height 1) 2))]
     (as-> {:map       (->> (subvec (:map state) top bottom)
-                           (map (fn [row] (subvec row left right))))
+                           (map (fn [row] (->> (subvec row left right)
+                                               (map (fn [tile] (let [monster (get-monster state (:entity tile))]
+                                                                 (if (some? monster)
+                                                                   (assoc tile :entity monster)
+                                                                   tile))))))))
            :character (get-client-character state char-id)} $
           (if (empty? events)
             $
